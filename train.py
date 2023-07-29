@@ -26,7 +26,7 @@ from conf import settings
 from utils import get_network, get_training_dataloader, get_test_dataloader, WarmUpLR, \
     most_recent_folder, most_recent_weights, last_epoch, best_acc_weights, loss_fn_kd, get_student_network
 
-time_consumed = []
+
 def train(epoch):
     
         
@@ -86,7 +86,6 @@ def train(epoch):
 
     print('epoch {} training time consumed: {:.2f}s'.format(epoch, finish - start))
 
-    time_consumed = time_comsumed.append(finish - start)
 
 @torch.no_grad()
 def eval_training(epoch=0, tb=True):
@@ -156,7 +155,7 @@ if __name__ == '__main__':
 
     net = get_network(args)
     
-
+    time_consumed = []
     #data preprocessing:
     cifar100_training_loader = get_training_dataloader(
         settings.CIFAR100_TRAIN_MEAN,
@@ -227,8 +226,11 @@ if __name__ == '__main__':
     studentNet = None
     if args.kd:
         studentNet = get_student_network(args.studentNet)
+        
         if args.gpu:
             net.load_state_dict(torch.load(args.weights, map_location = torch.device('cuda')))
+            net = net.cuda()
+            studentNet = studentNet.cuda()
         else:
             net.load_state_dict(torch.load(args.weights, map_location = torch.device('cpu')))
         
