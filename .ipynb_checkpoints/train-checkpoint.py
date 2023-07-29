@@ -24,19 +24,12 @@ from torch.utils.tensorboard import SummaryWriter
 
 from conf import settings
 from utils import get_network, get_training_dataloader, get_test_dataloader, WarmUpLR, \
-<<<<<<< HEAD
-    most_recent_folder, most_recent_weights, last_epoch, best_acc_weights
-
-def train(epoch):
-
-=======
     most_recent_folder, most_recent_weights, last_epoch, best_acc_weights, loss_fn_kd, get_student_network
 
 time_consumed = []
 def train(epoch):
     
         
->>>>>>> kd
     start = time.time()
     net.train()
     for batch_index, (images, labels) in enumerate(cifar100_training_loader):
@@ -46,10 +39,6 @@ def train(epoch):
             images = images.cuda()
 
         optimizer.zero_grad()
-<<<<<<< HEAD
-        outputs = net(images)
-        loss = loss_function(outputs, labels)
-=======
         
         if args.kd:
             teacher_outputs = teacherNet(images)
@@ -59,7 +48,6 @@ def train(epoch):
             outputs = net(images)
             loss = loss_function(outputs, labels)
             
->>>>>>> kd
         loss.backward()
         optimizer.step()
 
@@ -94,18 +82,11 @@ def train(epoch):
     finish = time.time()
 
     print('epoch {} training time consumed: {:.2f}s'.format(epoch, finish - start))
-<<<<<<< HEAD
-
-@torch.no_grad()
-def eval_training(epoch=0, tb=True):
-
-=======
     time_consumed = time_comsumed.append(finish - start)
 
 @torch.no_grad()
 def eval_training(epoch=0, tb=True):
         
->>>>>>> kd
     start = time.time()
     net.eval()
 
@@ -117,15 +98,10 @@ def eval_training(epoch=0, tb=True):
         if args.gpu:
             images = images.cuda()
             labels = labels.cuda()
-<<<<<<< HEAD
-
-        outputs = net(images)
-=======
             
             
         outputs = net(images)
         # Dont change to calc loss of student model
->>>>>>> kd
         loss = loss_function(outputs, labels)
 
         test_loss += loss.item()
@@ -162,12 +138,6 @@ if __name__ == '__main__':
     parser.add_argument('-warm', type=int, default=1, help='warm up training phase')
     parser.add_argument('-lr', type=float, default=0.1, help='initial learning rate')
     parser.add_argument('-resume', action='store_true', default=False, help='resume training')
-<<<<<<< HEAD
-    args = parser.parse_args()
-
-    net = get_network(args)
-
-=======
     parser.add_argument('-kd' , action='store_true', default=False, help="enable knowledge distillation learning or not")
     parser.add_argument('-studentNet', type=str, required=False, help='student net type')
     parser.add_argument('-weights', type=str, required=False, help='the weights file of teacher net')
@@ -178,7 +148,6 @@ if __name__ == '__main__':
 
     net = get_network(args)
     
->>>>>>> kd
     #data preprocessing:
     cifar100_training_loader = get_training_dataloader(
         settings.CIFAR100_TRAIN_MEAN,
@@ -195,17 +164,7 @@ if __name__ == '__main__':
         batch_size=args.b,
         shuffle=True
     )
-<<<<<<< HEAD
-
-    loss_function = nn.CrossEntropyLoss()
-    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
-    train_scheduler = optim.lr_scheduler.MultiStepLR(optimizer, milestones=settings.MILESTONES, gamma=0.2) #learning rate decay
-    iter_per_epoch = len(cifar100_training_loader)
-    warmup_scheduler = WarmUpLR(optimizer, iter_per_epoch * args.warm)
-
-=======
     
->>>>>>> kd
     if args.resume:
         recent_folder = most_recent_folder(os.path.join(settings.CHECKPOINT_PATH, args.net), fmt=settings.DATE_FORMAT)
         if not recent_folder:
@@ -254,12 +213,6 @@ if __name__ == '__main__':
 
         resume_epoch = last_epoch(os.path.join(settings.CHECKPOINT_PATH, args.net, recent_folder))
 
-<<<<<<< HEAD
-
-    for epoch in range(1, args.epo + 1):
-        if epoch > args.warm:
-            train_scheduler.step(epoch)
-=======
     studentNet = None
     if args.kd:
         studentNet = get_student_network(args.studentNet)
@@ -287,7 +240,6 @@ if __name__ == '__main__':
     for epoch in range(1, args.epo + 1):
         if epoch > args.warm:
                 train_scheduler.step(epoch)
->>>>>>> kd
 
         if args.resume:
             if epoch <= resume_epoch:
@@ -295,10 +247,6 @@ if __name__ == '__main__':
 
         train(epoch)
         acc = eval_training(epoch)
-<<<<<<< HEAD
-
-=======
->>>>>>> kd
         #start to save best performance model after learning rate decay to 0.01
         if epoch > settings.MILESTONES[1] and best_acc < acc:
             weights_path = checkpoint_path.format(net=args.net, epoch=epoch, type='best')
