@@ -41,8 +41,10 @@ if __name__ == '__main__':
         num_workers=4,
         batch_size=args.b,
     )
-
-    net.load_state_dict(torch.load(args.weights))
+    if args.gpu:
+        net.load_state_dict(torch.load(args.weights, map_location = torch.device('cuda')))
+    else:
+        net.load_state_dict(torch.load(args.weights, map_location = torch.device('cpu')))
     print(net)
     net.eval()
 

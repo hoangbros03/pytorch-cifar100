@@ -213,6 +213,124 @@ def get_student_network(version: str, num_channels = 64, dr_rate = 0.3):
                 x = self.fc4(x)
                 return x
         student_net = MyCompressNet(num_channels, dr_rate)
+    elif version=='v2':
+        class MyCompressNet2(nn.Module):
+            def __init__(self, num_channels = 64, dr_rate = 0.3):
+                super(MyCompressNet2, self).__init__()
+                self.num_channels = num_channels
+                self.conv1 = nn.Conv2d(3, self.num_channels, 3, stride=1, padding=1)
+                self.bn1 = nn.BatchNorm2d(self.num_channels)
+                self.conv2 = nn.Conv2d(self.num_channels, self.num_channels*2, 3, stride=1, padding=1)
+                self.bn2 = nn.BatchNorm2d(self.num_channels*2)
+                self.conv3 = nn.Conv2d(self.num_channels*2, self.num_channels*2, 3, stride=1, padding=1)
+                self.bn3 = nn.BatchNorm2d(self.num_channels*2)
+                self.conv4 = nn.Conv2d(self.num_channels*2, self.num_channels*4, 3, stride=1, padding=1)
+                self.bn4 = nn.BatchNorm2d(self.num_channels*4)
+                self.conv5 = nn.Conv2d(self.num_channels*4, self.num_channels*4, 3, stride=1, padding=1)
+                self.bn5 = nn.BatchNorm2d(self.num_channels*4)
+                self.conv6 = nn.Conv2d(self.num_channels*4, self.num_channels*4, 3, stride=1, padding=1)
+                self.bn6 = nn.BatchNorm2d(self.num_channels*4)
+                self.conv7 = nn.Conv2d(self.num_channels*4, self.num_channels*4, 3, stride=1, padding=1)
+                self.bn7 = nn.BatchNorm2d(self.num_channels*4)
+
+                self.fc1 = nn.Linear(4*4*self.num_channels*4, self.num_channels*4*4)
+                self.fc2 = nn.Linear(self.num_channels*4*4, self.num_channels*4*4)
+                self.fc3 = nn.Linear(self.num_channels*4*4, self.num_channels*4)
+                self.fc4 = nn.Linear(self.num_channels*4, self.num_channels*4)
+                self.fc5 = nn.Linear(self.num_channels*4, self.num_channels*2)
+                self.fc6 = nn.Linear(self.num_channels*2, 100)      
+                self.dropout_rate = dr_rate
+
+            def forward(self,x):
+                """
+                Forward function
+                """
+                x = self.bn1(self.conv1(x))
+                x = F.relu(F.max_pool2d(x,2))
+                x = self.bn2(self.conv2(x))
+                x = F.relu(x)
+                x = self.bn3(self.conv3(x))
+                x = F.relu(F.max_pool2d(x,2))
+                x = self.bn4(self.conv4(x))
+                x = F.relu(x)
+                x = self.bn5(self.conv5(x))
+                x = F.relu(F.max_pool2d(x,2))
+                x = self.bn6(self.conv6(x))
+                x = F.relu(x)
+                x = self.bn7(self.conv7(x))
+                x = F.relu(x)
+                x = x.view(-1, 4*4*self.num_channels*4)
+                x = F.relu(self.fc1(x))
+                x = F.dropout(x, p = self.dropout_rate)
+                x = F.relu(self.fc2(x))
+                x = F.relu(self.fc3(x))
+                x = F.relu(self.fc4(x))
+                x = F.dropout(x, p = self.dropout_rate)
+                x = F.relu(self.fc5(x))
+                x = self.fc6(x)
+                return x
+        student_net = MyCompressNet2(num_channels, dr_rate)
+    elif version=='v3':
+        class MyCompressNet3(nn.Module):
+            def __init__(self, num_channels = 64, dr_rate = 0.3):
+                super(MyCompressNet3, self).__init__()
+                self.num_channels = num_channels
+                self.conv1 = nn.Conv2d(3, self.num_channels, 3, stride=1, padding=1)
+                self.bn1 = nn.BatchNorm2d(self.num_channels)
+                self.conv2 = nn.Conv2d(self.num_channels, self.num_channels*2, 3, stride=1, padding=1)
+                self.bn2 = nn.BatchNorm2d(self.num_channels*2)
+                self.conv3 = nn.Conv2d(self.num_channels*2, self.num_channels*2, 1, stride=1, padding='same')
+                self.bn3 = nn.BatchNorm2d(self.num_channels*2)
+                self.conv4 = nn.Conv2d(self.num_channels*2, self.num_channels*4, 3, stride=1, padding=1)
+                self.bn4 = nn.BatchNorm2d(self.num_channels*4)
+                self.conv5 = nn.Conv2d(self.num_channels*4, self.num_channels*4, 1, stride=1, padding='same')
+                self.bn5 = nn.BatchNorm2d(self.num_channels*4)
+                self.conv6 = nn.Conv2d(self.num_channels*4, self.num_channels*4, 3, stride=1, padding=1)
+                self.bn6 = nn.BatchNorm2d(self.num_channels*4)
+                self.conv7 = nn.Conv2d(self.num_channels*4, self.num_channels*8, 3, stride=1, padding=1)
+                self.bn7 = nn.BatchNorm2d(self.num_channels*8)
+                self.conv8 = nn.Conv2d(self.num_channels*8, self.num_channels*8, 1, stride=1, padding='same')
+                self.bn8 = nn.BatchNorm2d(self.num_channels*8)
+
+                self.fc1 = nn.Linear(4*4*self.num_channels*8, self.num_channels*4*4)
+                self.fc2 = nn.Linear(self.num_channels*4*4, self.num_channels*4*4)
+                self.fc3 = nn.Linear(self.num_channels*4*4, self.num_channels*4)
+                self.fc4 = nn.Linear(self.num_channels*4, self.num_channels*4)
+                self.fc5 = nn.Linear(self.num_channels*4, self.num_channels*2)
+                self.fc6 = nn.Linear(self.num_channels*2, 100)      
+                self.dropout_rate = dr_rate
+
+            def forward(self,x):
+                """
+                Forward function
+                """
+                x = self.bn1(self.conv1(x))
+                x = F.relu(F.max_pool2d(x,2))
+                x = self.bn2(self.conv2(x))
+                x = F.relu(x)
+                x = self.bn3(self.conv3(x))
+                x = F.relu(F.max_pool2d(x,2))
+                x = self.bn4(self.conv4(x))
+                x = F.relu(x)
+                x = self.bn5(self.conv5(x))
+                x = F.relu(F.max_pool2d(x,2))
+                x = self.bn6(self.conv6(x))
+                x = F.relu(x)
+                x = self.bn7(self.conv7(x))
+                x = F.relu(x)
+                x = self.bn8(self.conv8(x))
+                x = F.relu(x)
+                x = x.view(-1, 4*4*self.num_channels*8)
+                x = F.relu(self.fc1(x))
+                x = F.dropout(x, p = self.dropout_rate)
+                x = F.relu(self.fc2(x))
+                x = F.relu(self.fc3(x))
+                x = F.relu(self.fc4(x))
+                x = F.dropout(x, p = self.dropout_rate)
+                x = F.relu(self.fc5(x))
+                x = self.fc6(x)
+                return x
+        student_net = MyCompressNet3(num_channels, dr_rate)
     else:
         print("Unsupported student model type")
         student_net = None

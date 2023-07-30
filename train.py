@@ -264,14 +264,20 @@ if __name__ == '__main__':
 
         #start to save best performance model after learning rate decay to 0.01
         if epoch > settings.MILESTONES[1] and best_acc < acc:
-            weights_path = checkpoint_path.format(net=args.net, epoch=epoch, type='best')
+            if args.kd:
+                weights_path = checkpoint_path.format(net=args.studentNet, epoch=epoch, type='best')
+            else:
+                weights_path = checkpoint_path.format(net=args.net, epoch=epoch, type='best')
             print('saving weights file to {}'.format(weights_path))
             torch.save(net.state_dict(), weights_path)
             best_acc = acc
             continue
 
         if not epoch % settings.SAVE_EPOCH:
-            weights_path = checkpoint_path.format(net=args.net, epoch=epoch, type='regular')
+            if args.kd:
+                weights_path = checkpoint_path.format(net=args.studentNet, epoch=epoch, type='regular')
+            else:
+                weights_path = checkpoint_path.format(net=args.net, epoch=epoch, type='regular')
             print('saving weights file to {}'.format(weights_path))
             torch.save(net.state_dict(), weights_path)
 
