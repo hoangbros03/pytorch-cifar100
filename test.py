@@ -51,7 +51,7 @@ if __name__ == '__main__':
     correct_1 = 0.0
     correct_5 = 0.0
     total = 0
-
+    acc = 0.0
     with torch.no_grad():
         for n_iter, (image, label) in enumerate(cifar100_test_loader):
             print("iteration: {}\ttotal {} iterations".format(n_iter + 1, len(cifar100_test_loader)))
@@ -68,6 +68,7 @@ if __name__ == '__main__':
 
             label = label.view(label.size(0), -1).expand_as(pred)
             correct = pred.eq(label).float()
+            acc += correct.sum()
 
             #compute top 5
             correct_5 += correct[:, :5].sum()
@@ -82,4 +83,5 @@ if __name__ == '__main__':
     print()
     print("Top 1 err: ", 1 - correct_1 / len(cifar100_test_loader.dataset))
     print("Top 5 err: ", 1 - correct_5 / len(cifar100_test_loader.dataset))
+    print(f"acc: {acc.float() / len(cifar100_test_loader.dataset)}")
     print("Parameter numbers: {}".format(sum(p.numel() for p in net.parameters())))
