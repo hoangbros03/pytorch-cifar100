@@ -213,7 +213,6 @@ def get_student_network(version: str, num_channels = 64, dr_rate = 0.3):
                 x = self.fc4(x)
                 return x
         student_net = MyCompressNet(num_channels, dr_rate)
-        
     else:
         print("Unsupported student model type")
         student_net = None

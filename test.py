@@ -17,7 +17,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 
 from conf import settings
-from utils import get_network, get_test_dataloader
+from utils import get_network, get_test_dataloader, get_student_network
 
 if __name__ == '__main__':
 
@@ -28,7 +28,11 @@ if __name__ == '__main__':
     parser.add_argument('-b', type=int, default=16, help='batch size for dataloader')
     args = parser.parse_args()
 
-    net = get_network(args)
+    net = get_student_network(args.net)
+    if net is None:
+        net = get_network(args)
+    if args.gpu:
+        net = net.cuda()
 
     cifar100_test_loader = get_test_dataloader(
         settings.CIFAR100_TRAIN_MEAN,
