@@ -350,7 +350,7 @@ def get_student_network(version: str, num_channels = 64, dr_rate = 0.3):
                 self.bn8 = nn.BatchNorm2d(self.num_channels*8)
                 self.conv9 = nn.Conv2d(self.num_channels*8, self.num_channels*8, 3, stride=1, padding='same')
                 self.bn9 = nn.BatchNorm2d(self.num_channels*8)
-
+                self.mp1 = nn.MaxPool2d(2, stride=2)
                 self.fc1 = nn.Linear(4*4*self.num_channels*8, self.num_channels*4*4*2)
                 self.fc2 = nn.Linear(self.num_channels*4*4*2, self.num_channels*4*4)
                 self.fc3 = nn.Linear(self.num_channels*4*4, self.num_channels*4*4)
@@ -383,6 +383,7 @@ def get_student_network(version: str, num_channels = 64, dr_rate = 0.3):
                 x = F.relu(x)
                 x = self.bn9(self.conv9(x))
                 x = F.relu(x)
+                x = self.mp1(x)
                 x = x.view(-1, 4*4*self.num_channels*8)
                 x = F.relu(self.fc1(x))
                 x = F.dropout(x, p = self.dropout_rate)
