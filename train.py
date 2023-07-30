@@ -148,6 +148,7 @@ if __name__ == '__main__':
     parser.add_argument('-kd' , action='store_true', default=False, help="enable knowledge distillation learning or not")
     parser.add_argument('-studentNet', type=str, required=False, help='student net type')
     parser.add_argument('-weights', type=str, required=False, help='the weights file of teacher net')
+    parser.add_argument('-opt', type=str, required=False, default='SGD', help='Choose optimizer')
     '''
     Edited to trainable using knowledge distillation strategy
     '''
@@ -238,7 +239,10 @@ if __name__ == '__main__':
     loss_function = nn.CrossEntropyLoss()
     
     if args.kd:
-        optimizer = optim.SGD(studentNet.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
+        if args.opt == 'SGD':
+            optimizer = optim.SGD(studentNet.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
+        else:
+            optimizer = optim.Adam(studentNet.parameters(), lr=args.lr)
     else:
         optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
         
