@@ -45,7 +45,7 @@ def train(epoch):
         if args.kd:
             teacher_outputs = teacherNet(images)
             outputs = net(images)
-            loss = loss_fn_kd(outputs, labels, teacher_outputs)
+            loss = loss_fn_kd(outputs, labels, teacher_outputs, alpha=args.alpha)
         else:
             outputs = net(images)
             loss = loss_function(outputs, labels)
@@ -149,6 +149,7 @@ if __name__ == '__main__':
     parser.add_argument('-studentNet', type=str, required=False, help='student net type')
     parser.add_argument('-weights', type=str, required=False, help='the weights file of teacher net')
     parser.add_argument('-opt', type=str, required=False, default='SGD', help='Choose optimizer')
+    parser.add_argument('-alpha', type=float, default=0.9, help="set alpha in loss function")
     '''
     Edited to trainable using knowledge distillation strategy
     '''
