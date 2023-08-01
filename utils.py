@@ -480,7 +480,7 @@ def get_student_network(version: str, num_channels = 64, dr_rate = 0.3):
     elif version == 'v6':
         class MyCompressNet6(nn.Module):
             def __init__(self, num_channels = 64, dr_rate = 0.3):
-                super(MyCompressNet2, self).__init__()
+                super(MyCompressNet6, self).__init__()
                 self.num_channels = num_channels
                 self.conv1 = nn.Conv2d(3, self.num_channels, 3, stride=1, padding=1)
                 self.bn1 = nn.BatchNorm2d(self.num_channels)
