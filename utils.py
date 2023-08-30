@@ -168,6 +168,22 @@ def get_network(args):
     return net
 
 def get_student_network(version: str, num_channels = 64, dr_rate = 0.3):
+    class Fire(nn.Module):
+            def __init__(self, inplanes: int, squeeze_planes: int, expand1x1_planes: int, expand3x3_planes: int) -> None:
+                super().__init__()
+                self.inplanes = inplanes
+                self.squeeze = nn.Conv2d(inplanes, squeeze_planes, kernel_size=1)
+                self.squeeze_activation = nn.ReLU(inplace=True)
+                self.expand1x1 = nn.Conv2d(squeeze_planes, expand1x1_planes, kernel_size=1)
+                self.expand1x1_activation = nn.ReLU(inplace=True)
+                self.expand3x3 = nn.Conv2d(squeeze_planes, expand3x3_planes, kernel_size=3, padding=1)
+                self.expand3x3_activation = nn.ReLU(inplace=True)
+
+            def forward(self, x: torch.Tensor) -> torch.Tensor:
+                x = self.squeeze_activation(self.squeeze(x))
+                return torch.cat(
+                    [self.expand1x1_activation(self.expand1x1(x)), self.expand3x3_activation(self.expand3x3(x))], 1
+                )
     if version == "v1":
         class MyCompressNet(nn.Module):
             def __init__(self, num_channels = 64, dr_rate = 0.3):
@@ -331,6 +347,254 @@ def get_student_network(version: str, num_channels = 64, dr_rate = 0.3):
                 x = self.fc6(x)
                 return x
         student_net = MyCompressNet3(num_channels, dr_rate)
+    elif version=="v4":
+        class MyCompressNet4(nn.Module):
+            def __init__(self, num_channels = 64, dr_rate = 0.3):
+                super(MyCompressNet4, self).__init__()
+                self.num_channels = num_channels
+                self.conv1 = nn.Conv2d(3, self.num_channels, 3, stride=1, padding=1)
+                self.bn1 = nn.BatchNorm2d(self.num_channels)
+                self.conv2 = nn.Conv2d(self.num_channels, self.num_channels*4, 3, stride=1, padding=1)
+                self.bn2 = nn.BatchNorm2d(self.num_channels*4)
+                self.conv5 = nn.Conv2d(self.num_channels*4, self.num_channels*4, 1, stride=1, padding='same')
+                self.bn5 = nn.BatchNorm2d(self.num_channels*4)
+                self.conv6 = nn.Conv2d(self.num_channels*4, self.num_channels*4, 3, stride=1, padding=1)
+                self.bn6 = nn.BatchNorm2d(self.num_channels*4)
+                self.conv7 = nn.Conv2d(self.num_channels*4, self.num_channels*8, 3, stride=1, padding=1)
+                self.bn7 = nn.BatchNorm2d(self.num_channels*8)
+                self.conv8 = nn.Conv2d(self.num_channels*8, self.num_channels*8, 1, stride=1, padding='same')
+                self.bn8 = nn.BatchNorm2d(self.num_channels*8)
+                self.conv9 = nn.Conv2d(self.num_channels*8, self.num_channels*8, 3, stride=1, padding='same')
+                self.bn9 = nn.BatchNorm2d(self.num_channels*8)
+                self.mp1 = nn.MaxPool2d(2, stride=2)
+                self.fc1 = nn.Linear(4*4*self.num_channels*8, self.num_channels*4*4*2)
+                self.fc2 = nn.Linear(self.num_channels*4*4*2, self.num_channels*4*4)
+                self.fc3 = nn.Linear(self.num_channels*4*4, self.num_channels*4*4)
+                self.fc4 = nn.Linear(self.num_channels*4*4, self.num_channels*4*2)
+                self.fc5 = nn.Linear(self.num_channels*4*2, self.num_channels*4)
+                self.fc6 = nn.Linear(self.num_channels*4, self.num_channels*4)      
+                self.fc7 = nn.Linear(self.num_channels*4, self.num_channels*2)
+                self.fc8 = nn.Linear(self.num_channels*2, 100)
+                self.dropout_rate = dr_rate
+
+            def forward(self, x):
+                """
+                Forward function
+                """
+                x = self.bn1(self.conv1(x))
+                x = F.relu(F.max_pool2d(x, 2))
+                x = self.bn2(self.conv2(x))
+                x = F.relu(x)
+                # x = self.bn3(self.conv3(x))
+                # x = F.relu(F.max_pool2d(x,2))
+                # x = self.bn4(self.conv4(x))
+                # x = F.relu(x)
+                x = self.bn5(self.conv5(x))
+                x = F.relu(F.max_pool2d(x,2))
+                x = self.bn6(self.conv6(x))
+                x = F.relu(x)
+                x = self.bn7(self.conv7(x))
+                x = F.relu(x)
+                x = self.bn8(self.conv8(x))
+                x = F.relu(x)
+                x = self.bn9(self.conv9(x))
+                x = F.relu(x)
+                x = self.mp1(x)
+                x = x.view(-1, 4*4*self.num_channels*8)
+                x = F.relu(self.fc1(x))
+                x = F.dropout(x, p = self.dropout_rate)
+                x = F.relu(self.fc2(x))
+                x = F.relu(self.fc3(x))
+                x = F.relu(self.fc4(x))
+                x = F.dropout(x, p = self.dropout_rate)
+                x = F.relu(self.fc5(x))
+                x = F.relu(self.fc6(x))
+                x = F.relu(self.fc7(x))
+                x = F.relu(self.fc8(x))
+                return x
+        student_net = MyCompressNet4()
+    elif version=='v5':
+        class MyCompressNet5(nn.Module):
+            def __init__(self, num_channels = 64, dr_rate = 0.3):
+                super(MyCompressNet5, self).__init__()
+                self.num_channels = num_channels
+                self.conv1 = nn.Conv2d(3, self.num_channels, 3, stride=1, padding=1)
+                self.bn1 = nn.BatchNorm2d(self.num_channels)
+                self.conv2 = nn.Conv2d(self.num_channels, self.num_channels*4, 3, stride=1, padding=1)
+                self.bn2 = nn.BatchNorm2d(self.num_channels*4)
+                self.mp1 = nn.MaxPool2d(2, stride=2)
+                self.conv7 = nn.Conv2d(self.num_channels*4, self.num_channels*8, 3, stride=1, padding=1)
+                self.bn7 = nn.BatchNorm2d(self.num_channels*8)
+                self.conv8 = nn.Conv2d(self.num_channels*8, self.num_channels*8, 1, stride=1, padding='same')
+                self.bn8 = nn.BatchNorm2d(self.num_channels*8)
+                self.conv9 = nn.Conv2d(self.num_channels*8, self.num_channels*8, 3, stride=1, padding='same')
+                self.bn9 = nn.BatchNorm2d(self.num_channels*8)
+                self.mp2 = nn.MaxPool2d(2, stride=2)
+                self.fc1 = nn.Linear(4*4*self.num_channels*8, self.num_channels*4*4*2)
+                self.fc2 = nn.Linear(self.num_channels*4*4*2, self.num_channels*4*4)
+                self.fc3 = nn.Linear(self.num_channels*4*4, self.num_channels*4*4)
+                self.fc4 = nn.Linear(self.num_channels*4*4, self.num_channels*4*2)
+                self.fc5 = nn.Linear(self.num_channels*4*2, self.num_channels*4)
+                self.fc6 = nn.Linear(self.num_channels*4, self.num_channels*4)      
+                self.fc7 = nn.Linear(self.num_channels*4, self.num_channels*2)
+                self.fc8 = nn.Linear(self.num_channels*2, 100)
+                self.dropout_rate = dr_rate
+
+            def forward(self,x):
+                """
+                Forward function
+                """
+                x = self.bn1(self.conv1(x))
+                x = F.relu(F.max_pool2d(x,2))
+                x = self.bn2(self.conv2(x))
+                x = F.relu(x)
+                # x = self.bn3(self.conv3(x))
+                # x = F.relu(F.max_pool2d(x,2))
+                # x = self.bn4(self.conv4(x))
+                # x = F.relu(x)
+                x = self.mp1(x)
+                # x = self.bn5(self.conv5(x))
+                # x = F.relu(F.max_pool2d(x,2))
+                # x = self.bn6(self.conv6(x))
+                # x = F.relu(x)
+                x = self.bn7(self.conv7(x))
+                x = F.relu(x)
+                x = self.bn8(self.conv8(x))
+                x = F.relu(x)
+                x = self.bn9(self.conv9(x))
+                x = F.relu(x)
+                x = self.mp2(x)
+                x = x.view(-1, 4*4*self.num_channels*8)
+                x = F.relu(self.fc1(x))
+                x = F.dropout(x, p = self.dropout_rate)
+                x = F.relu(self.fc2(x))
+                x = F.relu(self.fc3(x))
+                x = F.relu(self.fc4(x))
+                x = F.dropout(x, p = self.dropout_rate)
+                x = F.relu(self.fc5(x))
+                x = F.relu(self.fc6(x))
+                x = F.relu(self.fc7(x))
+                x = F.relu(self.fc8(x))
+                return x
+        student_net = MyCompressNet5()
+    elif version == 'v6':
+        class MyCompressNet6(nn.Module):
+            def __init__(self, num_channels = 64, dr_rate = 0.3):
+                super(MyCompressNet6, self).__init__()
+                self.num_channels = num_channels
+                self.conv1 = nn.Conv2d(3, self.num_channels, 3, stride=1, padding=1)
+                self.bn1 = nn.BatchNorm2d(self.num_channels)
+                self.conv2 = nn.Conv2d(self.num_channels, self.num_channels*2, 3, stride=1, padding=1)
+                self.bn2 = nn.BatchNorm2d(self.num_channels*2)
+                self.fire1 = Fire(self.num_channels*2, self.num_channels*4, self.num_channels*2, self.num_channels*2)
+                self.bnfire1 = nn.BatchNorm2d(self.num_channels*4)
+                self.conv3 = nn.Conv2d(self.num_channels*4, self.num_channels*4, 3, stride=1, padding=1)
+                self.bn3 = nn.BatchNorm2d(self.num_channels*4)
+                # self.conv4 = nn.Conv2d(self.num_channels*2, self.num_channels*4, 3, stride=1, padding=1)
+                self.fire2 = Fire(self.num_channels*4, self.num_channels*8, self.num_channels*4, self.num_channels*4)
+                self.bnfire2 = nn.BatchNorm2d(self.num_channels*8)
+                self.conv5 = nn.Conv2d(self.num_channels*8, self.num_channels*4, 3, stride=1, padding=1)
+                self.bn5 = nn.BatchNorm2d(self.num_channels*4)
+                self.fc1 = nn.Linear(4*4*self.num_channels*4, self.num_channels*4*4)
+                self.fc2 = nn.Linear(self.num_channels*4*4, self.num_channels*4*4)
+                self.fc3 = nn.Linear(self.num_channels*4*4, self.num_channels*4)
+                self.fc4 = nn.Linear(self.num_channels*4, self.num_channels*4)
+                self.fc5 = nn.Linear(self.num_channels*4, self.num_channels*2)
+                self.fc6 = nn.Linear(self.num_channels*2, 100)      
+                self.dropout_rate = dr_rate
+            def forward(self,x):
+                """
+                Forward function
+                """
+                x = self.bn1(self.conv1(x))
+                x = F.relu(F.max_pool2d(x,2))
+                x = self.bn2(self.conv2(x))
+                x = F.relu(x)
+                x = F.relu(self.bnfire1(self.fire1(x)))
+                x = self.bn3(self.conv3(x))
+                x = F.relu(F.max_pool2d(x,2))
+                # x = self.bn4(self.conv4(x))
+                # x = F.relu(x)
+                x = self.bnfire2(self.fire2(x))
+                x = F.relu(x)
+                x = self.bn5(self.conv5(x))
+                x = F.relu(F.max_pool2d(x,2))
+                x = x.view(-1, 4*4*self.num_channels*4)
+                x = F.relu(self.fc1(x))
+                x = F.dropout(x, p = self.dropout_rate)
+                x = F.relu(self.fc2(x))
+                x = F.relu(self.fc3(x))
+                x = F.relu(self.fc4(x))
+                x = F.dropout(x, p = self.dropout_rate)
+                x = F.relu(self.fc5(x))
+                x = self.fc6(x)
+                return x
+        student_net = MyCompressNet6()
+    elif version == 'v7':
+        class MyCompressNet7(nn.Module):
+            def __init__(self, num_channels = 64, dr_rate = 0.3):
+                super(MyCompressNet7, self).__init__()
+                self.num_channels = num_channels
+                self.conv1 = nn.Conv2d(3, self.num_channels, 3, stride=1, padding=1)
+                self.bn1 = nn.BatchNorm2d(self.num_channels)
+                self.conv2 = nn.Conv2d(self.num_channels, self.num_channels*2, 3, stride=1, padding=1)
+                self.bn2 = nn.BatchNorm2d(self.num_channels*2)
+                self.fire1 = Fire(self.num_channels*2, self.num_channels*2, self.num_channels*2, self.num_channels*2)
+                self.bnfire1 = nn.BatchNorm2d(self.num_channels*4)
+                self.fire2 = Fire(self.num_channels*4, self.num_channels*2, self.num_channels*4, self.num_channels*4)
+                self.bnfire2 = nn.BatchNorm2d(self.num_channels*8)
+                self.fire3 = Fire(self.num_channels*8, self.num_channels*2, self.num_channels*8, self.num_channels*8)
+                self.bnfire3 = nn.BatchNorm2d(self.num_channels*16)
+                self.conv3 = nn.Conv2d(self.num_channels*16, self.num_channels*8, 3, stride=1, padding=1)
+                self.bn3 = nn.BatchNorm2d(self.num_channels*8)
+                # self.conv4 = nn.Conv2d(self.num_channels*2, self.num_channels*4, 3, stride=1, padding=1)
+                self.fire4 = Fire(self.num_channels*8, self.num_channels*2, self.num_channels*4, self.num_channels*4)
+                self.bnfire4 = nn.BatchNorm2d(self.num_channels*8)
+                self.conv5 = nn.Conv2d(self.num_channels*8, self.num_channels*8, 3, stride=1, padding=1)
+                self.bn5 = nn.BatchNorm2d(self.num_channels*8)
+                self.fire5 = Fire(self.num_channels*8, self.num_channels*2, self.num_channels*2, self.num_channels*2)
+                self.bnfire5 = nn.BatchNorm2d(self.num_channels*4)
+                self.fire6 = Fire(self.num_channels*4, self.num_channels, self.num_channels, self.num_channels)
+                self.bnfire6 = nn.BatchNorm2d(self.num_channels*2)
+                self.fc1 = nn.Linear(4*4*self.num_channels*2, self.num_channels*4*4)
+                # self.fc2 = nn.Linear(self.num_channels*4*4, self.num_channels*4*4)
+                self.fc3 = nn.Linear(self.num_channels*4*4, self.num_channels*4)
+                self.fc4 = nn.Linear(self.num_channels*4, self.num_channels*4)
+                self.fc5 = nn.Linear(self.num_channels*4, self.num_channels*2)
+                self.fc6 = nn.Linear(self.num_channels*2, 100)      
+                self.dropout_rate = dr_rate
+            def forward(self,x):
+                """
+                Forward function
+                """
+                x = self.bn1(self.conv1(x))
+                x = F.relu(F.max_pool2d(x,2))
+                x = self.bn2(self.conv2(x))
+                x = F.relu(x)
+                x = F.relu(self.bnfire1(self.fire1(x)))
+                x = F.relu(self.bnfire2(self.fire2(x)))
+                x = F.relu(self.bnfire3(self.fire3(x)))
+                x = self.bn3(self.conv3(x))
+                x = F.relu(F.max_pool2d(x,2))
+                # x = self.bn4(self.conv4(x))
+                # x = F.relu(x)
+                x = self.bnfire4(self.fire4(x))
+                x = F.relu(x)
+                x = self.bn5(self.conv5(x))
+                x = F.relu(F.max_pool2d(x,2))
+                x = F.relu(self.bnfire5(self.fire5(x)))
+                x = F.relu(self.bnfire6(self.fire6(x)))
+                x = x.view(-1, 4*4*self.num_channels*2)
+                x = F.relu(self.fc1(x))
+                x = F.dropout(x, p = self.dropout_rate)
+                # x = F.relu(self.fc2(x))
+                x = F.relu(self.fc3(x))
+                x = F.relu(self.fc4(x))
+                x = F.dropout(x, p = self.dropout_rate)
+                x = F.relu(self.fc5(x))
+                x = self.fc6(x)
+                return x
+        student_net = MyCompressNet7()
     else:
         print("Unsupported student model type")
         student_net = None
@@ -380,7 +644,7 @@ def get_test_dataloader(mean, std, batch_size=16, num_workers=2, shuffle=True):
         transforms.ToTensor(),
         transforms.Normalize(mean, std)
     ])
-    #cifar100_test = CIFAR100Test(path, transform=transform_test)
+    # cifar100_test = CIFAR100Test(path, transform=transform_test)
     cifar100_test = torchvision.datasets.CIFAR100(root='./data', train=False, download=True, transform=transform_test)
     cifar100_test_loader = DataLoader(
         cifar100_test, shuffle=shuffle, num_workers=num_workers, batch_size=batch_size)
